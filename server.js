@@ -2,6 +2,7 @@ const express = require('express')
 const app = express() //express library 쓰겠다는 뜻
 
 app.use(express.static(__dirname + '/public'))
+app.set('view engine', 'ejs') 
 
 const { MongoClient } = require('mongodb')
 
@@ -40,3 +41,22 @@ app.get('/about', (요청, 응답) => {
     응답.sendFile(__dirname + '/about.html')
 })
 
+app.get('/list', async (요청, 응답) => {
+  let result = await db.collection('collection').find().toArray()
+  //await : 실행 완료까지 기다림  
+  //js는 처리가 오래 걸리는 코드는 기다리지 않고 바로 다음 줄 실행함
+  console.log(result[0].title)
+  //array -> object에서 원하는 값 찾기
+  //응답.send(result[0].title) 응답은 하나만 가능!
+  응답.render('list.ejs', {list : result}) //db에서 뽑은 모든 글 목록을 보냄
+  //서버 데이터를 ejs파일에 넣으려면
+  //1. 경로 옆에 object 형식으로 전송
+  //2. ejs 파일 안에서 ejs 문법 사용
+  
+})
+
+app.get('/time', (요청, 응답) => {
+  var time = new Date()
+  응답.render('time.ejs', {newTime : time})
+  //응답.render('time.ejs', time)
+}) 

@@ -3,6 +3,9 @@ const app = express() //express library 쓰겠다는 뜻
 
 app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs') 
+app.use(express.json())
+app.use(express.urlencoded({extended:true})) 
+//요청.body 쓰려면 위 두개 필요
 
 const { MongoClient } = require('mongodb')
 
@@ -58,5 +61,24 @@ app.get('/list', async (요청, 응답) => {
 app.get('/time', (요청, 응답) => {
   var time = new Date()
   응답.render('time.ejs', {newTime : time})
-  //응답.render('time.ejs', time)
+}) 
+
+app.get('/write', (요청, 응답) => {
+  응답.render('write.ejs')
+}) 
+
+app.post('/add', async (요청, 응답) => {
+  console.log(요청.body)
+  try {
+    if (요청.body.title == '') {
+      응답.send('제목 없음!')
+    } else {
+      await db.collection('collection').insertOne({title : 요청.body.title, content : 요청.body.content})
+      //collection에 파일 하나 만들고 거기에 데이터를 입력한다
+      응답.redirect('/list')
+    }
+  } catch(e) {
+    console.log(e)//에러메시지 출력해줌
+    응답.status(500).send('서버 에러!')
+  }
 }) 

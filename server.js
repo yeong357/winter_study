@@ -7,7 +7,7 @@ app.use(express.json())
 app.use(express.urlencoded({extended:true})) 
 //요청.body 쓰려면 위 두개 필요
 
-const { MongoClient } = require('mongodb')
+const { MongoClient, ObjectId } = require('mongodb')
 
 let db
 const url = 'mongodb+srv://lh703535:Kyu270511@cluster0.o074p9k.mongodb.net/?retryWrites=true&w=majority';
@@ -81,4 +81,24 @@ app.post('/add', async (요청, 응답) => {
     console.log(e)//에러메시지 출력해줌
     응답.status(500).send('서버 에러!')
   }
+}) 
+
+app.get('/detail/:id', async (요청, 응답) => {
+  //'detail/'뒤에 아무 문자나 입력하면 안에 있는 코드가 실행됨
+
+  try {
+    let result = await db.collection('collection').findOne({_id : new ObjectId(요청.params.id)})
+  console.log(요청.params)
+  응답.render('detail.ejs', {result : result}) 
+  //유저가 '/detail/1' 접속하면, id가 1인 글 내용 ejs 파일로 보내기
+  //기능 정리
+  //1. 유저가 /detail/어쩌구 접속하면 (접속 by 링크)
+  //2. {_id : 어쩌구} 글을 DB에서 찾아서
+  //3. ejs 파일에 박아서 보내줌
+  } catch(e){
+    console.log(e)
+    응답.status(404).send('url 입력 이상!!')
+  }
+  //try/catch 하나로 모든 예외 cover 못 함
+  //id 길이가 같고 끝에 한자리만 다르면 ejs에 null 보냄
 }) 

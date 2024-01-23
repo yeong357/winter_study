@@ -102,3 +102,13 @@ app.get('/detail/:id', async (요청, 응답) => {
   //try/catch 하나로 모든 예외 cover 못 함
   //id 길이가 같고 끝에 한자리만 다르면 ejs에 null 보냄
 }) 
+
+app.get('/edit/:id', async (요청, 응답) => {
+  db.collection('collection').updateOne()
+  //updateOne({어떤 document를 수정하고 싶은 지 - 사용자가 알고 있음}, {$set: 어떤 내용으로 덮어쓸 지-요청.body 사용})
+  //서버에서 정보를 찾을 수 없으면: 유저에게 보내라고 하거나 / DB에서 꺼내보거나
+
+  let result = await db.collection('collection').findOne({_id : new ObjectId(요청.params.id)})
+  console.log(요청.params)
+  응답.render('edit.ejs', {result : result}) 
+}) 

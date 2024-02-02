@@ -17,11 +17,37 @@
                     <a href="/detail/<%= list[i]._id %>">
                     <%= list[i].title %>
                     </a>
+                    <a href="/edit/<%= list[i]._id %>">✏️</a>
+                    <%# 수정 버튼 추가 %>
+                    <%# 수정 기능: 1. 수정버튼 누르면 수정 페이지로 이동 %>
+                    <%# 2. 수정 페이지엔 기존 글이 채워져 있음 %>
+                    <%# 3. 전송 누르면 입력한 내용으로 DB 글 수정 %>
+                    <span class="delete" data-id="<%= list[0]._id %>">🗑️</span>
                 </h4>
                 <p><%= list[i].content %></p>
             </div>
         <% } %> 
     </div> 
+
+
+    <a href="/list/next/<%= list[list.length-1]._id %>">다음</a>
+
+
+    <script>
+        for (let i = 0; i< '<%= list.length %>'; i++){
+            document.querySelectorAll('.delete')[i].addEventListener('click', function (e){
+                e.target.dataset.id
+                fetch('/delete?docid=' + e.target.dataset.id, {
+                    method : 'DELETE',
+                })//ajax 기능으로 새로고침 없이 post 요청 
+            .then((r)=>r.text())
+            .then((r)=>{
+                e.target.parentElement.parentElement.style.display = 'none'
+                //target의 부모의 부모를 찾아서 css로 안 보이게 처리함
+            })
+            })
+        }
+    </script>
   
   </body>
 </html>

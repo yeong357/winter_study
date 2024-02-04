@@ -4,6 +4,7 @@ const { MongoClient, ObjectId } = require('mongodb')
 const methodOverride = require('method-override')
 const bcrypt = require('bcrypt')
 const MongoStore = require('connect-mongo')
+require('dotenv').config()
 
 app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs') 
@@ -22,18 +23,44 @@ app.use(session({
   resave : false,
   saveUninitialized : false,
   cookie : { maxAge : 60 * 60 * 1000 },
-  
+  store : MongoStore.create({
+    mongoUrl : process.env.DB_URL,
+    dbName : 'winter_study'
+  })
+
 }))
 
 app.use(passport.session()) 
 
+const { S3Client } = require('@aws-sdk/client-s3')
+const multer = require('multer')
+const multerS3 = require('multer-s3')
+const s3 = new S3Client({
+  region : 'ap-northeast-2',
+  credentials : {
+      accessKeyId : process.env.S3_KEY,
+      secretAccessKey : process.env.S3_SECRET
+  }
+})
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'winterstudy',
+    key: function (요청, file, cb) {
+      cb(null, Date.now().toString()) //업로드시 파일명 변경가능
+    }
+  })
+})
+
+let connectDB = require('./database.js')
+
 let db
-
-new MongoClient(url).connect().then((client)=>{
+connectDB.then((client)=>{
   console.log('DB연결성공')
-  db = client.db('winter_study')
+  db = client.db('winter_study');
 
-  app.listen(8080, () => {
+  app.listen(process.env.PORT, () => {
     console.log('http://localhost:8080 에서 서버 실행중')  //서버 띄우는 코드: listen(포트번호)
   })
 
@@ -85,15 +112,16 @@ app.get('/write', (요청, 응답) => {
   응답.render('write.ejs')
 }) 
 
-app.post('/add', async (요청, 응답) => {
-  console.log(요청.body)
+app.post('/add', upload.single('img1'), async (요청, 응답) => {
+
   try {
     if (요청.body.title == '') {
       응답.send('제목 없음!')
     } else {
-      await db.collection('collection').insertOne({title : 요청.body.title, content : 요청.body.content})
+      await db.collection('collection').insertOne({title : 요청.body.title, content : 요청.body.content, img : 요청.file.location})
       //collection에 파일 하나 만들고 거기에 데이터를 입력한다
       응답.redirect('/list')
+
     }
   } catch(e) {
     console.log(e)//에러메시지 출력해줌
@@ -217,3 +245,5 @@ app.post('/register', async (요청, 응답) => {
   })
   응답.redirect('/')
 })
+
+app.use('/shop', require('./routes/shop.js')) //shop.js에 있던 API 사용 가능

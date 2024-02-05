@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="/main.css" rel="stylesheet">
+</head>
+<body class="grey-bg">
+    <%- include('nav.ejs') %>
+    
+    <input class="search">
+    <button class="search-send">검색</button>
+
+    <script>
+        document.querySelector('.search-send').addEventListener('click', function(){
+            let searchData = document.querySelector('.search').value
+            location.href = '/search?val=' + searchData 
+        })
+    </script>
+
+    <h4>검색 결과</h4>
+
+    <div class="white-bg">
+        <% for (let i = 0; i<list.length; i++) { %>
+            <div class="list-box">
+                <h4>
+                    <a href="/detail/<%= list[i]._id %>">
+                    <%= list[i].title %>
+                    </a>
+                    <a href="/edit/<%= list[i]._id %>">✏️</a>
+                    
+                    <span class="delete" data-id="<%= list[0]._id %>">🗑️</span>
+                </h4>
+                <p><%= list[i].content %></p>
+            </div>
+        <% } %> 
+    </div> 
+  
+  </body>
+</html>

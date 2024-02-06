@@ -118,8 +118,13 @@ app.post('/add', upload.single('img1'), async (요청, 응답) => {
     if (요청.body.title == '') {
       응답.send('제목 없음!')
     } else {
-      await db.collection('collection').insertOne({title : 요청.body.title, content : 요청.body.content, img : 요청.file.location})
-      //collection에 파일 하나 만들고 거기에 데이터를 입력한다
+      await db.collection('collection').insertOne({
+        title : 요청.body.title, 
+        content : 요청.body.content, 
+        img : 요청.file ? 요청.file.location : '', //삼항연산자
+        user : 요청.user._id,
+        username : 요청.user.username
+      })
       응답.redirect('/list')
 
     }
@@ -134,8 +139,9 @@ app.get('/detail/:id', async (요청, 응답) => {
 
   try {
     let result = await db.collection('collection').findOne({_id : new ObjectId(요청.params.id)})
-  console.log(요청.params)
-  응답.render('detail.ejs', {result : result}) 
+
+    let result2 = await db.collection('comment').find({ parentId : new ObjectId(요청.params.id)}).toArray()
+  응답.render('detail.ejs', {result : result, result2 : result2} )
   //유저가 '/detail/1' 접속하면, id가 1인 글 내용 ejs 파일로 보내기
   //기능 정리
   //1. 유저가 /detail/어쩌구 접속하면 (접속 by 링크)
@@ -170,11 +176,13 @@ app.put('/edit', async (요청, 응답) => {
   
 //}) 
 
-app.delete('/delete', async (요청, 응답) => {
-  console.log(요청.query) 
-  await db.collection('collection').deleteOne({ _id : new ObjectId(요청.query.docid) })
+app.delete('/delete', async (요청, 응답)=>{
+  await db.collection('collection').deleteOne({ 
+    _id : new ObjectId(요청.query.docid),
+    user : new ObjectId(요청.user._id)
+  })
   응답.send('삭제완료')
-})
+}) 
 
 app.get('/list/:id', async (요청, 응답) => {
   let result = await db.collection('collection').find().skip( (요청.params.id - 1) * 5 ).limit(5).toArray()
@@ -262,4 +270,22 @@ app.get('/search', async (요청, 응답) => {
   .aggregate(검색조건).toArray()
 
   응답.render('search.ejs', {list : result})
+})
+
+app.post('/comment', async (요청, 응답) => {
+  await db.collection('comment').insertOne({
+    content : 요청.body.content,
+    writerId : new ObjectId(요청.user._id),
+    writer : 요청.user.username,
+    parentId : new ObjectId(요청.body.parentId)
+  })
+  응답.redirect('back')
+})
+
+app.get('/chat/request', async (요청, 응답) => {
+  await db.collection('chatroom').insertOne({
+    member : [요청.user._id, 요청.user.writerId],
+    date : new Date()
+  })
+  응답.render('')
 })

@@ -284,8 +284,24 @@ app.post('/comment', async (요청, 응답) => {
 
 app.get('/chat/request', async (요청, 응답) => {
   await db.collection('chatroom').insertOne({
-    member : [요청.user._id, 요청.user.writerId],
+    member : [요청.user._id, new ObjectId(요청.user.writerId)],
     date : new Date()
   })
-  응답.render('')
+  응답.redirect('')
 })
+
+app.get('/chat/list', async (요청, 응답)=>{
+  let result = await db.collection('chatroom').find({ member : 요청.user._id }).toArray()
+  응답.render('chatlist.ejs', {result : result})
+}) 
+
+app.get('/chat/detail/:id', async (요청, 응답) => {
+  let result = await db.collection('chatroom').findOne({_id : new ObjectId(요청.params.id)})
+  
+  try {요청.user._id = result
+    응답.render('chatdetail.ejs', {result : result})
+  } catch(e) {
+    응답.status(400).send('로그인 하세요!')
+  }
+})
+  

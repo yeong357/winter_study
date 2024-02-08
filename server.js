@@ -6,6 +6,11 @@ const bcrypt = require('bcrypt')
 const MongoStore = require('connect-mongo')
 require('dotenv').config()
 
+const { createServer } = require('http')
+const { Server } = require('socket.io')
+const server = createServer(app)
+const io = new Server(server) 
+
 app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs') 
 app.use(express.json())
@@ -60,7 +65,7 @@ connectDB.then((client)=>{
   console.log('DB연결성공')
   db = client.db('winter_study');
 
-  app.listen(process.env.PORT, () => {
+  server.listen(process.env.PORT, () => {
     console.log('http://localhost:8080 에서 서버 실행중')  //서버 띄우는 코드: listen(포트번호)
   })
 
@@ -304,4 +309,48 @@ app.get('/chat/detail/:id', async (요청, 응답) => {
     응답.status(400).send('로그인 하세요!')
   }
 })
+
+io.on('connection', (socket) => {
+  socket.on('age', (data) => {//데이터 수신
+    console.log('유저가보냄', data)
+    io.emit('name', 'kim') //서버가 유저에게 데이터 전송
+  })
+  socket.on('ask-join', (data) => {
+    //socket.request.session
+    socket.join(data)//유저를 룸에 넣는건 서버만 가능
+  //유저는 서버에 부탁해야 룸에 조인 가능
+  })
   
+  socket.on('message', (data) => {
+    io.to(data.room).emit('broadcast', data.msg)
+  })
+
+})
+
+app.get('/stream/list', (요청, 응답) => {
+  응답.writeHead(200, {
+    "Connection" : "keep-alive",
+    "Content-type" : "text/event-stream",
+    "cache-control" : "no-cache",
+  })
+
+  //setInterval(() => {
+    
+  //}, 1000);//유저가 요청하지 않아도 1초마다 데이터 전송
+  
+  //MongoDB change stream : DB 변동사항을 실시간으로 서버에 알려줌
+  
+  let 조건 = [//doucment가 insert될 때만 watch에 조건으로 넣어 안의 코드 실행
+    { $match : { operationType : 'insert' } }
+  ]
+  
+  let changeStream = db.collection('collection').watch(조건)
+  changeStream.on('change', (result) => {
+    console.log(result.fullDocument) //collection의 document 생성/수정/삭제 시, 여기 코드가 실행 됨
+    //변동사항 내용은 result안에 있음
+    응답.write('event: msg\n')
+    응답.write(`data: ${JSON.stringify(result.fullDocument)}\n\n`)//형식 꼭 맞춰야 함
+    
+  })
+  
+})

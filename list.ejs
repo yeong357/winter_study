@@ -10,6 +10,17 @@
     <%# JSON.stringify(list) %>
     <%- include('nav.ejs') %>
     <%# 해당 ejs 파일에 있던 html을 모두 복사해옴 %>
+
+    <input class="search">
+    <button class="search-send">검색</button>
+
+    <script>
+        document.querySelector('.search-send').addEventListener('click', function(){
+            let searchData = document.querySelector('.search').value
+            location.href = '/search?val=' + searchData //여기로 페이지 이동시켜 주세요
+        })
+    </script>
+
     <div class="white-bg">
         <% for (let i = 0; i<list.length; i++) { %>
             <div class="list-box">
@@ -22,7 +33,7 @@
                     <%# 수정 기능: 1. 수정버튼 누르면 수정 페이지로 이동 %>
                     <%# 2. 수정 페이지엔 기존 글이 채워져 있음 %>
                     <%# 3. 전송 누르면 입력한 내용으로 DB 글 수정 %>
-                    <span class="delete" data-id="<%= list[0]._id %>">🗑️</span>
+                    <span class="delete" data-id="<%= list[i]._id %>">🗑️</span>
                 </h4>
                 <p><%= list[i].content %></p>
             </div>
@@ -47,6 +58,16 @@
             })
             })
         }
+    </script>
+
+    <script>
+        let eventSource = new EventSource('/stream/list')
+        eventSource.addEventListener('msg', function(e){
+            console.log(e.data)//서버로 보낸 데이터는 e안에 들어있음
+            
+            let 가져온거 = JSON.parse(e.data) //다시 array, object로 바꿔줌 -> .title 사용 가능해짐
+            document.querySelector('.white-bg').insertAdjacentHTML('afterbegin', `<div class="list-box"><h4>${가져온거.title}</h4></div>`)
+        })
     </script>
   
   </body>
